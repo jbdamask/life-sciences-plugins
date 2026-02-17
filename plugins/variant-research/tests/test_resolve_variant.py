@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from conftest import make_mock_response, MYVARIANT_RESPONSE
-from resolve_variant import resolve_variant, _lookup_gene_name
+from resolve_variant import resolve_variant, _lookup_gene_name, _lookup_ensembl_id
 
 
 class TestResolveVariant:
@@ -179,6 +179,65 @@ class TestResolveVariant:
         mock_get.return_value = make_mock_response(json_data=response)
         result = resolve_variant("rs699")
         assert result["consequence"] == "missense_variant"
+
+
+class TestLookupEnsemblId:
+    """Tests for the _lookup_ensembl_id() helper."""
+
+    @patch("resolve_variant.requests.get")
+    def test_successful_lookup(self, mock_get):
+        mock_get.return_value = make_mock_response(json_data={
+            "hits": [{"ensembl": {"gene": "ENSG00000180914"}}],
+        })
+        assert _lookup_ensembl_id("OXTR") == "ENSG00000180914"
+
+    @patch("resolve_variant.requests.get")
+    def test_ensembl_as_list(self, mock_get):
+        mock_get.return_value = make_mock_response(json_data={
+            "hits": [{"ensembl": [{"gene": "ENSG00000180914"}, {"gene": "ENSG00000000002"}]}],
+        })
+        assert _lookup_ensembl_id("OXTR") == "ENSG00000180914"
+
+    @patch("resolve_variant.requests.get")
+    def test_no_hits(self, mock_get):
+        mock_get.return_value = make_mock_response(json_data={"hits": []})
+        assert _lookup_ensembl_id("XYZXYZ") is None
+
+    @patch("resolve_variant.requests.get")
+    def test_network_failure_returns_none(self, mock_get):
+        from requests.exceptions import ConnectionError
+        mock_get.side_effect = ConnectionError("fail")
+        assert _lookup_ensembl_id("OXTR") is None
+
+
+class TestEnsemblIdFallback:
+    """Tests for the ensembl_gene_id fallback in resolve_variant()."""
+
+    @patch("resolve_variant._lookup_ensembl_id", return_value="ENSG00000180914")
+    @patch("resolve_variant._lookup_gene_name", return_value="oxytocin receptor")
+    @patch("resolve_variant.requests.get")
+    def test_fallback_called_when_dbnsfp_missing(self, mock_get, mock_gene_name, mock_ensembl):
+        """When dbnsfp.ensembl.geneid is missing, fall back to MyGene.info."""
+        response = {
+            "hits": [{
+                "dbsnp": {"chrom": "3", "hg19": {"start": 8804371},
+                          "gene": {"symbol": "OXTR"}},
+            }],
+        }
+        mock_get.return_value = make_mock_response(json_data=response)
+        result = resolve_variant("rs53576")
+        assert result["ensembl_gene_id"] == "ENSG00000180914"
+        mock_ensembl.assert_called_once_with("OXTR")
+
+    @patch("resolve_variant._lookup_ensembl_id")
+    @patch("resolve_variant._lookup_gene_name", return_value="angiotensinogen")
+    @patch("resolve_variant.requests.get")
+    def test_fallback_not_called_when_dbnsfp_present(self, mock_get, mock_gene_name, mock_ensembl):
+        """When dbnsfp.ensembl.geneid is present, skip the fallback."""
+        mock_get.return_value = make_mock_response(json_data=MYVARIANT_RESPONSE)
+        result = resolve_variant("rs699")
+        assert result["ensembl_gene_id"] == "ENSG00000135744"
+        mock_ensembl.assert_not_called()
 
 
 class TestLookupGeneName:
