@@ -13,7 +13,8 @@ from pathlib import Path
 
 import requests
 
-EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+from ncbi_utils import ncbi_get
+
 CTGOV_API = "https://clinicaltrials.gov/api/v2/studies"
 GWAS_API = "https://www.ebi.ac.uk/gwas/rest/api"
 
@@ -24,28 +25,24 @@ def fetch_clinvar(rsid: str, gene_symbol: str) -> list[dict]:
 
     try:
         # Search ClinVar for just the rsID
-        resp = requests.get(f"{EUTILS_BASE}/esearch.fcgi", params={
+        resp = ncbi_get("esearch.fcgi", {
             "db": "clinvar",
             "term": rsid,
             "retmode": "json",
             "retmax": 20,
-        }, timeout=30)
-        resp.raise_for_status()
+        })
         data = resp.json()
         ids = data.get("esearchresult", {}).get("idlist", [])
 
         if not ids:
             return entries
 
-        time.sleep(1.5)
-
         # Get summaries
-        resp = requests.get(f"{EUTILS_BASE}/esummary.fcgi", params={
+        resp = ncbi_get("esummary.fcgi", {
             "db": "clinvar",
             "id": ",".join(ids),
             "retmode": "json",
-        }, timeout=30)
-        resp.raise_for_status()
+        })
         summary_data = resp.json()
 
         results = summary_data.get("result", {})
@@ -299,8 +296,6 @@ def fetch_all_clinical(rsid: str, gene_symbol: str) -> dict:
                 result["clinvar_entries"].append(entry)
     except Exception as e:
         result["errors"].append(f"ClinVar failed: {str(e)}")
-
-    time.sleep(0.34)
 
     # ClinicalTrials.gov
     try:

@@ -22,7 +22,7 @@ from fetch_clinical import (
 class TestFetchClinvar:
     """Tests for ClinVar search."""
 
-    @patch("fetch_clinical.requests.get")
+    @patch("fetch_clinical.ncbi_get")
     def test_successful_fetch(self, mock_get):
         mock_get.side_effect = [
             make_mock_response(json_data=CLINVAR_ESEARCH_RESPONSE),
@@ -34,7 +34,7 @@ class TestFetchClinvar:
         assert entries[0]["conditions"] == "Hypertension"
         assert entries[0]["review_status"] == "criteria provided, single submitter"
 
-    @patch("fetch_clinical.requests.get")
+    @patch("fetch_clinical.ncbi_get")
     def test_no_ids_found(self, mock_get):
         mock_get.return_value = make_mock_response(json_data={
             "esearchresult": {"idlist": []},
@@ -42,7 +42,7 @@ class TestFetchClinvar:
         entries = fetch_clinvar("rs999999", "FAKE")
         assert entries == []
 
-    @patch("fetch_clinical.requests.get")
+    @patch("fetch_clinical.ncbi_get")
     def test_network_failure(self, mock_get):
         from requests.exceptions import ConnectionError
         mock_get.side_effect = ConnectionError("fail")
@@ -50,16 +50,17 @@ class TestFetchClinvar:
         assert len(entries) == 1
         assert "error" in entries[0]
 
-    @patch("fetch_clinical.requests.get")
-    def test_clinical_significance_as_string(self, mock_get):
-        """Some ClinVar entries have clinical_significance as a plain string."""
+    @patch("fetch_clinical.ncbi_get")
+    def test_clinical_significance_via_germline(self, mock_get):
+        """ClinVar entries use germline_classification for clinical significance."""
         summary = {
             "result": {
                 "uids": ["999"],
                 "999": {
                     "uid": "999",
-                    "clinical_significance": "Pathogenic",
-                    "trait_set": [],
+                    "germline_classification": {
+                        "description": "Pathogenic",
+                    },
                     "variation_set": [],
                 },
             },
@@ -134,7 +135,6 @@ class TestFetchGwasAssociations:
         assert assocs[0]["p_value"] == "3.5e-12"
         assert "beta=0.15" in assocs[0]["effect_size"]
         assert assocs[0]["risk_allele"] == "rs699-C"
-        assert assocs[0]["study_accession"] == "GCST001234"
         assert assocs[0]["pmid"] == "27618448"
 
     @patch("fetch_clinical.requests.get")

@@ -14,19 +14,19 @@ from fetch_literature import fetch_literature, esearch, efetch_articles, _parse_
 class TestEsearch:
     """Tests for PubMed esearch."""
 
-    @patch("fetch_literature.requests.get")
+    @patch("fetch_literature.ncbi_get")
     def test_returns_pmids(self, mock_get):
         mock_get.return_value = make_mock_response(json_data=PUBMED_ESEARCH_RESPONSE)
         pmids = esearch("AGT AND rs699")
         assert pmids == ["12345678", "87654321"]
 
-    @patch("fetch_literature.requests.get")
+    @patch("fetch_literature.ncbi_get")
     def test_empty_result(self, mock_get):
         mock_get.return_value = make_mock_response(json_data={"esearchresult": {"idlist": []}})
         pmids = esearch("nonexistent_gene_12345")
         assert pmids == []
 
-    @patch("fetch_literature.requests.get")
+    @patch("fetch_literature.ncbi_get")
     def test_network_failure(self, mock_get):
         from requests.exceptions import ConnectionError
         mock_get.side_effect = ConnectionError("fail")
@@ -37,7 +37,7 @@ class TestEsearch:
 class TestEfetchArticles:
     """Tests for PubMed efetch."""
 
-    @patch("fetch_literature.requests.get")
+    @patch("fetch_literature.ncbi_get")
     def test_parses_articles(self, mock_get):
         mock_get.return_value = make_mock_response(text=PUBMED_EFETCH_XML)
         articles = efetch_articles(["12345678", "87654321"])
@@ -52,10 +52,9 @@ class TestEfetchArticles:
         articles = efetch_articles([])
         assert articles == []
 
-    @patch("fetch_literature.requests.get")
+    @patch("fetch_literature.ncbi_get")
     def test_single_author(self, mock_get):
         """Single author should not have 'et al.'"""
-        articles = efetch_articles.__wrapped__ if hasattr(efetch_articles, '__wrapped__') else None
         mock_get.return_value = make_mock_response(text=PUBMED_EFETCH_XML)
         articles = efetch_articles(["87654321"])
         # Second article in our fixture has one author

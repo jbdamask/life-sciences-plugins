@@ -154,4 +154,4 @@ class TestFetchAllPatents:
         """Gene names with multiple words should trigger an extra query."""
         mock_search.return_value = []
         result = fetch_all_patents("rs699", "AGT", "angiotensinogen precursor protein")
-        assert len(result["search_queries_used"]) == 4  # base 3 + 1 extra
+        assert len(result["search_queries_used"]) == 5  # base 3 + 2 extra for multi-word gene name

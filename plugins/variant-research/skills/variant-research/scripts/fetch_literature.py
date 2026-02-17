@@ -7,14 +7,12 @@ Google Scholar is not available via free API, so only PubMed is searched.
 
 import json
 import sys
-import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import requests
 
-EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-NCBI_API_KEY = None  # Set via env var NCBI_API_KEY for higher rate limits
+from ncbi_utils import ncbi_get
 
 
 def esearch(query: str, retmax: int = 20) -> list[str]:
@@ -26,10 +24,7 @@ def esearch(query: str, retmax: int = 20) -> list[str]:
         "retmax": retmax,
         "sort": "relevance",
     }
-    if NCBI_API_KEY:
-        params["api_key"] = NCBI_API_KEY
-    resp = requests.get(f"{EUTILS_BASE}/esearch.fcgi", params=params, timeout=30)
-    resp.raise_for_status()
+    resp = ncbi_get("esearch.fcgi", params)
     data = resp.json()
     return data.get("esearchresult", {}).get("idlist", [])
 
@@ -45,10 +40,7 @@ def efetch_articles(pmids: list[str]) -> list[dict]:
         "rettype": "xml",
         "retmode": "xml",
     }
-    if NCBI_API_KEY:
-        params["api_key"] = NCBI_API_KEY
-    resp = requests.get(f"{EUTILS_BASE}/efetch.fcgi", params=params, timeout=60)
-    resp.raise_for_status()
+    resp = ncbi_get("efetch.fcgi", params, timeout=60)
 
     articles = []
     root = ET.fromstring(resp.text)
@@ -131,10 +123,6 @@ def _get_text(elem) -> str:
 
 def fetch_literature(rsid: str, gene_symbol: str) -> dict:
     """Search PubMed for literature on the given variant/gene."""
-    import os
-    global NCBI_API_KEY
-    NCBI_API_KEY = os.environ.get("NCBI_API_KEY")
-
     result = {
         "rsid": rsid,
         "gene_symbol": gene_symbol,
@@ -158,7 +146,6 @@ def fetch_literature(rsid: str, gene_symbol: str) -> dict:
             for pmid in pmids:
                 if pmid not in all_pmids:
                     all_pmids.append(pmid)
-            time.sleep(0.34)  # Respect NCBI rate limit (3/sec without key)
         except requests.RequestException as e:
             result["errors"].append(f"PubMed search failed for '{query}': {str(e)}")
 

@@ -207,12 +207,12 @@ CLINVAR_ESUMMARY_RESPONSE = {
         "uids": ["12345"],
         "12345": {
             "uid": "12345",
-            "clinical_significance": {
+            "germline_classification": {
                 "description": "drug response",
                 "review_status": "criteria provided, single submitter",
                 "last_evaluated": "2023-01-01",
+                "trait_set": [{"trait_name": "Hypertension"}],
             },
-            "trait_set": [{"trait_name": "Hypertension"}],
             "variation_set": [{"variation_archive_id": "12345"}],
         },
     },
