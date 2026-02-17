@@ -1,0 +1,9 @@
+{
+  "name": "variant-research",
+  "version": "1.0.0",
+  "description": "Comprehensive genomic variant research plugin. Provide an rsID and get a full research report covering literature, patents, clinical data, protein interactions, and drug target analysis.",
+  "author": {
+    "name": "John Damask"
+  },
+  "keywords": ["genomics", "variant", "drug-target", "biomedical", "research"]
+}

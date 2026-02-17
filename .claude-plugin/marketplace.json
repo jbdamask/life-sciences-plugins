@@ -1,0 +1,26 @@
+{
+  "name": "life-sciences-plugins",
+  "owner": {
+    "name": "John Damask",
+    "email": "jbdamask@gmail.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for life sciences research — genomics, variant analysis, and biomedical databases",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "variant-research",
+      "source": "./plugins/variant-research",
+      "description": "Research a genomic variant by rsID. Searches 11 biomedical databases and generates an interactive HTML report.",
+      "version": "1.0.0",
+      "author": {
+        "name": "John Damask",
+        "email": "jbdamask@gmail.com"
+      },
+      "category": "genomics",
+      "keywords": ["genomics", "variant", "rsid", "clinvar", "gwas", "pubmed", "patents", "drug-targets", "protein"]
+    }
+  ]
+}

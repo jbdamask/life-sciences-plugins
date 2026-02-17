@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+reports/
+.beads/
+.setup_done
+.claude/
+.cache/
