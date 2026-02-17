@@ -142,9 +142,7 @@ def main():
         sys.exit(1)
 
     rsid = sys.argv[1].lower().strip()
-    script_dir = Path(__file__).parent
-    project_dir = script_dir.parent.parent.parent
-    reports_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else project_dir / "reports"
+    reports_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else Path.cwd() / "reports"
 
     # Read variant info
     variant_file = reports_dir / f"{rsid}_variant.json"

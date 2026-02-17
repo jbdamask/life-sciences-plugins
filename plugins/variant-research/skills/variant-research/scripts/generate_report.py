@@ -168,8 +168,7 @@ def main():
 
     rsid = sys.argv[1]
     script_dir = Path(__file__).parent
-    project_dir = script_dir.parent.parent.parent
-    reports_dir = sys.argv[2] if len(sys.argv) > 2 else str(project_dir / "reports")
+    reports_dir = sys.argv[2] if len(sys.argv) > 2 else str(Path.cwd() / "reports")
     template_dir = str(script_dir.parent / "templates")
 
     output_path = generate_report(rsid, reports_dir, template_dir)
