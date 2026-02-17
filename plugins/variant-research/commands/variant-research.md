@@ -20,14 +20,20 @@ Store the rsID (lowercase, trimmed) as `$RSID`.
 Before running any scripts, determine the plugin installation directory. Run this:
 
 ```bash
-PLUGIN_DIR="$HOME/.claude/plugins/variant-research"
-if [ ! -d "$PLUGIN_DIR/skills/variant-research/scripts" ]; then
-  # Development mode - check if scripts exist relative to CWD
-  if [ -d "skills/variant-research/scripts" ]; then
-    PLUGIN_DIR="$(pwd)"
-  else
-    echo "ERROR: Cannot find variant-research plugin. Checked $PLUGIN_DIR and $(pwd)" && exit 1
+# Search known install locations for the plugin
+PLUGIN_DIR=""
+for candidate in \
+  "$HOME/.claude/plugins/variant-research" \
+  $(find "$HOME/.claude/plugins/marketplaces" -maxdepth 3 -name "variant-research" -type d 2>/dev/null) \
+  $(find "$HOME/.claude/plugins/cache" -maxdepth 4 -name "variant-research" -type d 2>/dev/null) \
+  "$(pwd)"; do
+  if [ -d "$candidate/skills/variant-research/scripts" ]; then
+    PLUGIN_DIR="$candidate"
+    break
   fi
+done
+if [ -z "$PLUGIN_DIR" ]; then
+  echo "ERROR: Cannot find variant-research plugin." && exit 1
 fi
 echo "PLUGIN_DIR=$PLUGIN_DIR"
 ```
@@ -109,7 +115,7 @@ Fill in the counts from the JSON files. Note any databases that returned errors.
 
 ## Error Handling
 
-- If Phase 0 fails (plugin not found): Tell the user the plugin could not be located. Suggest checking that it is installed at `~/.claude/plugins/variant-research/` or that the development directory contains `skills/variant-research/scripts/`.
+- If Phase 0 fails (plugin not found): Tell the user the plugin could not be located. Suggest reinstalling via `/plugin marketplace add jbdamask/life-sciences-plugins`.
 - If Phase 1 fails (no gene_symbol): Tell the user the rsID could not be resolved and suggest checking the ID.
 - If individual Phase 2 scripts fail: Continue with available data. Note failures in the summary.
 - If Phase 3 fails: Try running the report generator again. If it fails twice, list the available JSON files and suggest manual review.
