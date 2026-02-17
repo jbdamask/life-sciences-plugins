@@ -13,39 +13,18 @@ The user provides an rsID (e.g., `rs699`, `rs334`, `rs12345`).
 
 Store the rsID (lowercase, trimmed) as `$RSID`.
 
+Use `${CLAUDE_PLUGIN_ROOT}` as the base path for all script references. The venv and scripts live at:
+- Venv: `${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate`
+- Scripts: `${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/`
+
 ## Workflow
-
-### Phase 0: Locate Plugin (blocking, run first)
-
-Before running any scripts, determine the plugin installation directory. Run this:
-
-```bash
-# Search known install locations for the plugin
-PLUGIN_DIR=""
-for candidate in \
-  "$HOME/.claude/plugins/variant-research" \
-  $(find "$HOME/.claude/plugins/marketplaces" -maxdepth 3 -name "variant-research" -type d 2>/dev/null) \
-  $(find "$HOME/.claude/plugins/cache" -maxdepth 4 -name "variant-research" -type d 2>/dev/null) \
-  "$(pwd)"; do
-  if [ -d "$candidate/skills/variant-research/scripts" ]; then
-    PLUGIN_DIR="$candidate"
-    break
-  fi
-done
-if [ -z "$PLUGIN_DIR" ]; then
-  echo "ERROR: Cannot find variant-research plugin." && exit 1
-fi
-echo "PLUGIN_DIR=$PLUGIN_DIR"
-```
-
-Save the resulting `PLUGIN_DIR` path. ALL subsequent commands use this as the base path.
 
 ### Phase 1: Variant Resolution (blocking)
 
 Run the variant resolver to get gene information:
 
 ```bash
-source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/resolve_variant.py" $RSID
+source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/resolve_variant.py" $RSID
 ```
 
 Save the output to `reports/${RSID}_variant.json`.
@@ -62,27 +41,27 @@ Tell the user:
 
 Launch ALL FIVE of these as parallel Task agents using subagent_type "Bash". Each runs a Python script that calls REST APIs directly (no MCP tools needed).
 
-**IMPORTANT**: Launch all 5 in a SINGLE response with 5 parallel Task tool calls. Each command must use the `$PLUGIN_DIR` determined in Phase 0 for both venv activation and script paths.
+**IMPORTANT**: Launch all 5 in a SINGLE response with 5 parallel Task tool calls.
 
 1. **Literature Search**
    - subagent_type: "Bash"
-   - Prompt: `source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/fetch_literature.py" $RSID`
+   - Prompt: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/fetch_literature.py" $RSID`
 
 2. **Patent Search**
    - subagent_type: "Bash"
-   - Prompt: `source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/fetch_patents.py" $RSID`
+   - Prompt: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/fetch_patents.py" $RSID`
 
 3. **Clinical Search**
    - subagent_type: "Bash"
-   - Prompt: `source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/fetch_clinical.py" $RSID`
+   - Prompt: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/fetch_clinical.py" $RSID`
 
 4. **Protein Search**
    - subagent_type: "Bash"
-   - Prompt: `source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/fetch_protein.py" $RSID`
+   - Prompt: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/fetch_protein.py" $RSID`
 
 5. **Drug Target Search**
    - subagent_type: "Bash"
-   - Prompt: `source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/fetch_drug_targets.py" $RSID`
+   - Prompt: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/fetch_drug_targets.py" $RSID`
 
 Wait for all to complete. Report progress to the user as each finishes.
 
@@ -91,7 +70,7 @@ Wait for all to complete. Report progress to the user as each finishes.
 Generate the HTML report:
 
 ```bash
-source "$PLUGIN_DIR/.venv/bin/activate" && python "$PLUGIN_DIR/skills/variant-research/scripts/generate_report.py" $RSID
+source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate" && python "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/generate_report.py" $RSID
 ```
 
 The report will be at `reports/${RSID}_report.html`.
@@ -115,8 +94,7 @@ Fill in the counts from the JSON files. Note any databases that returned errors.
 
 ## Error Handling
 
-- If Phase 0 fails (plugin not found): Tell the user the plugin could not be located. Suggest reinstalling via `/plugin marketplace add jbdamask/life-sciences-plugins`.
 - If Phase 1 fails (no gene_symbol): Tell the user the rsID could not be resolved and suggest checking the ID.
 - If individual Phase 2 scripts fail: Continue with available data. Note failures in the summary.
 - If Phase 3 fails: Try running the report generator again. If it fails twice, list the available JSON files and suggest manual review.
-- Always ensure the venv is activated before running Python scripts: `source "$PLUGIN_DIR/.venv/bin/activate"`
+- Always ensure the venv is activated before running Python scripts: `source "${CLAUDE_PLUGIN_ROOT}/.venv/bin/activate"`
