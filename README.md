@@ -32,3 +32,7 @@ Research a genomic variant by rsID. Searches 11 biomedical databases in parallel
 - `PATENTSVIEW_API_KEY` — required for patent search ([free key](https://patentsview.org/apis/keyrequest))
 - `BIOGRID_API_KEY` — required for BioGRID ([free key](https://wiki.thebiogrid.org/doku.php/biogridrest))
 - `NCBI_API_KEY` — increases PubMed rate limit from 3/s to 10/s
+
+## Example Report
+
+[rs6025 (F5 — Factor V Leiden)](https://share-it-amroja.s3.us-east-1.amazonaws.com/rs6025_report.html)
