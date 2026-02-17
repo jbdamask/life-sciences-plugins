@@ -19,6 +19,16 @@ Use `${CLAUDE_PLUGIN_ROOT}` as the base path for all script references. The venv
 
 ## Workflow
 
+### Phase 0: Setup (blocking, first run only)
+
+If the venv does not exist, run setup:
+
+```bash
+if [ ! -d "${CLAUDE_PLUGIN_ROOT}/.venv" ]; then
+  bash "${CLAUDE_PLUGIN_ROOT}/skills/variant-research/scripts/setup.sh"
+fi
+```
+
 ### Phase 1: Variant Resolution (blocking)
 
 Run the variant resolver to get gene information:
